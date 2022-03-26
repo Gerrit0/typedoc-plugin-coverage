@@ -15,13 +15,13 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: Install
-        run: yarn
+        run: npm
       - name: Type Check
-        run: yarn typecheck
+        run: npm run typecheck
       - name: Test
-        run: yarn test
+        run: npm test
       - name: Lint
-        run: yarn prettier --check .
+        run: npx prettier --check .
       - name: Circular dependency check
         uses: gerrit0/circular-dependency-check@v1
         with:
