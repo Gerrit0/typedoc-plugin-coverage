@@ -23,7 +23,7 @@
     "typedocplugin"
   ],
   "peerDependencies": {
-    "typedoc": "0.22.x"
+    "typedoc": "^0.22.12"
   },
   "scripts": {
     "pretest": "npm run build",

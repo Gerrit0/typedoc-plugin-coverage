@@ -55,7 +55,7 @@ async function expectCoverage(
 			/<text x="84" y="14">([^<]+)<\/text>/
 		)?.[1];
 
-		expect(actualCoverage).toBe(`${Math.floor(ratio * 100).toFixed(1)}%`);
+		expect(actualCoverage).toBe(`${Math.floor(ratio * 100)}%`);
 	} finally {
 		for (const [key, val] of Object.entries(saved)) {
 			app.options.setValue(key, val);

@@ -90,7 +90,7 @@ export function load(app: Application) {
 		}
 
 		const badge = svg
-			.replace(/@ratio@/g, `${percentDocumented.toFixed(1)}%`)
+			.replace(/@ratio@/g, `${percentDocumented}%`)
 			.replace(/@color@/g, color);
 		writeFileSync(join(event.outputDirectory, "coverage.svg"), badge);
 	});
