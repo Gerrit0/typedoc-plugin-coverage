@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: Install
-        run: npm
+        run: npm ci
       - name: Type Check
         run: npm run typecheck
       - name: Test
