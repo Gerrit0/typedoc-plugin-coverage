@@ -23,7 +23,7 @@ jobs:
           node-version: "14"
       - name: Install
         if: steps.check.outputs.changed == 'true'
-        run: npm
+        run: npm install
       - name: Build
         if: steps.check.outputs.changed == 'true'
         run: npm run build
