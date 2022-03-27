@@ -49,22 +49,21 @@ export function load(app: Application) {
 			.getValue("requiredToBeDocumented")
 			.reduce((acc, kindName) => acc | ReflectionKind[kindName], 0);
 
+		// Expand aliases, ref: https://github.com/TypeStrong/typedoc/blob/master/src/lib/validation/documentation.ts#L22-L36
 		if (kinds & ReflectionKind.FunctionOrMethod) {
 			kinds |= ReflectionKind.CallSignature;
+			kinds = kinds & ~ReflectionKind.FunctionOrMethod;
 		}
 		if (kinds & ReflectionKind.Constructor) {
 			kinds |= ReflectionKind.ConstructorSignature;
+			kinds = kinds & ~ReflectionKind.Constructor;
+		}
+		if (kinds & ReflectionKind.Accessor) {
+			kinds |= ReflectionKind.GetSignature | ReflectionKind.SetSignature;
+			kinds = kinds & ~ReflectionKind.Accessor;
 		}
 
 		for (const refl of Object.values(event.project.reflections)) {
-			if (
-				refl instanceof DeclarationReflection &&
-				refl.getAllSignatures().length
-			) {
-				// Comment will be on the signatures, which we'll get later in this loop.
-				continue;
-			}
-
 			if (refl.kindOf(kinds)) {
 				expectedCount += 1;
 
