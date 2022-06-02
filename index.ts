@@ -75,7 +75,7 @@ export function load(app: Application) {
 
 		const percentDocumented = expectedCount
 			? Math.floor((100 * actualCount) / expectedCount)
-			: 0;
+			: 100;
 
 		let color = app.options.getValue("coverageColor");
 		if (!color) {
