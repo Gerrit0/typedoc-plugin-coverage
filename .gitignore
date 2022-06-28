@@ -1,6 +1,7 @@
 node_modules
 dist
 yarn-error.log
+out.json
 
 *.js.map
 *.js

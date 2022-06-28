@@ -1,12 +1,6 @@
 import { writeFileSync } from "fs";
 import { join } from "path";
-import {
-	Application,
-	DeclarationReflection,
-	ReflectionKind,
-	Renderer,
-	RendererEvent,
-} from "typedoc";
+import { Application, ReflectionKind, Renderer, RendererEvent } from "typedoc";
 
 declare module "typedoc" {
 	export interface TypeDocOptionMap {

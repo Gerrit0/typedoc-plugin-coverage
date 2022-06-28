@@ -14,6 +14,11 @@ Default colors/icon sourced from [esdoc-coverage-plugin](https://github.com/esdo
 
 ## Change Log
 
+### v2.0.0 (2022-06-27)
+
+- Added support for TypeDoc 0.23.
+- Dropped support for Node 12.
+
 ### v1.0.2 (2022-03-26)
 
 - Fixed handling of `requiredToBeDocumented` if `"Accessor"` was specified.
