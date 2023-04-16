@@ -1,19 +1,19 @@
 import * as ts from "typescript";
 import { join } from "path";
-import { Application, Logger, TSConfigReader, TypeDocOptions } from "typedoc";
+import { Application, TSConfigReader, TypeDocOptions } from "typedoc";
 import { it, expect, describe } from "vitest";
 import { mkdtemp, readFile, rm } from "fs/promises";
 import { tmpdir } from "os";
+import { load } from "../index.js";
 
 const app = new Application();
 app.options.addReader(new TSConfigReader());
 app.bootstrap({
 	tsconfig: join(__dirname, "packages", "tsconfig.json"),
-	plugin: [join(__dirname, "..", "index.js")],
 	excludeExternals: true,
-	// Dumb logger that does nothing
-	logger: new Logger(),
+	logLevel: "None",
 });
+load(app);
 
 const program = ts.createProgram(
 	app.options.getFileNames(),

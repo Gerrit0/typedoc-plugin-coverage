@@ -9,11 +9,11 @@
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
-    "prettier": "^2.7.1",
-    "typedoc": "^0.23.2",
-    "typescript": "^4.7.4",
-    "vitest": "^0.16.0",
-    "esbuild": "^0.14.47"
+    "prettier": "^2.8.7",
+    "typedoc": "^0.24.2",
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1",
+    "esbuild": "^0.17.16"
   },
   "repository": {
     "type": "git",
@@ -26,7 +26,7 @@
     "typedocplugin"
   ],
   "peerDependencies": {
-    "typedoc": "^0.22.12 || 0.23.x"
+    "typedoc": "^0.22.12 || 0.23.x || 0.24.x"
   },
   "scripts": {
     "pretest": "npm run build",
