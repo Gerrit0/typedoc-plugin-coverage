@@ -15,9 +15,13 @@ Default colors/icon sourced from [esdoc-coverage-plugin](https://github.com/esdo
 
 ## Change Log
 
+### v2.1.0 (2022-04-20)
+
+- Added `coverageLabel` option.
+
 ### v2.0.1 (2022-04-15)
 
-- Added support for TypeDoc 0.24
+- Added support for TypeDoc 0.24.
 
 ### v2.0.0 (2022-06-27)
 

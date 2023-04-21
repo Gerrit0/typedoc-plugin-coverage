@@ -1,6 +1,6 @@
 {
   "name": "typedoc-plugin-coverage",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "main": "index.js",
   "license": "MIT",
   "author": "Gerrit Birkeland <gerrit@gerritbirkeland.com>",
@@ -23,7 +23,7 @@
     "index.js"
   ],
   "keywords": [
-    "typedocplugin"
+    "typedoc-plugin"
   ],
   "peerDependencies": {
     "typedoc": "^0.22.12 || 0.23.x || 0.24.x"
