@@ -1,39 +1,45 @@
 import * as ts from "typescript";
 import { join } from "path";
 import { Application, TSConfigReader, TypeDocOptions } from "typedoc";
-import { it, expect, describe } from "vitest";
+import { it, expect, describe, beforeAll } from "vitest";
 import { mkdtemp, readFile, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { load } from "../index.js";
 
-const app = new Application();
-app.options.addReader(new TSConfigReader());
-app.bootstrap({
-	tsconfig: join(__dirname, "packages", "tsconfig.json"),
-	excludeExternals: true,
-	logLevel: "None",
-});
-load(app);
+let app: Application;
+let program: ts.Program;
 
-const program = ts.createProgram(
-	app.options.getFileNames(),
-	app.options.getCompilerOptions()
-);
+beforeAll(async () => {
+	app = await Application.bootstrap(
+		{
+			tsconfig: join(__dirname, "packages", "tsconfig.json"),
+			excludeExternals: true,
+			logLevel: "None",
+		},
+		[new TSConfigReader()],
+	);
+	load(app);
+
+	program = ts.createProgram(
+		app.options.getFileNames(),
+		app.options.getCompilerOptions(),
+	);
+});
 
 async function expectCoverage(
 	ratio: number,
 	folder: string,
-	options: Partial<TypeDocOptions> = {}
+	options: Partial<TypeDocOptions> = {},
 ) {
 	const sf = program.getSourceFile(
-		join(__dirname, "packages", folder, "index.ts")
+		join(__dirname, "packages", folder, "index.ts"),
 	);
 	expect(sf).toBeDefined();
 
 	const tmp = await mkdtemp(join(tmpdir(), "typedoc-plugin-coverage-"));
 
 	const saved = Object.fromEntries(
-		Object.keys(options).map((key) => [key, app.options.getValue(key)])
+		Object.keys(options).map((key) => [key, app.options.getValue(key)]),
 	);
 
 	try {
@@ -52,7 +58,7 @@ async function expectCoverage(
 
 		const badge = await readFile(join(tmp, "coverage.svg"), "utf-8");
 		const actualCoverage = badge.match(
-			/<text x="84" y="14">([^<]+)<\/text>/
+			/<text x="84" y="14">([^<]+)<\/text>/,
 		)?.[1];
 
 		expect(actualCoverage).toBe(`${Math.floor(ratio * 100)}%`);
