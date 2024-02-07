@@ -1,0 +1,33 @@
+### v3.0.0 (2024-02-06)
+
+- Updated coverage calculation algorithm to use the same logic as TypeDoc 0.25.7 to determine what members ought to be documented.
+- Updated build tooling, migrate to ESM.
+
+### v2.2.0 (2023-08-25)
+
+- Added support for TypeDoc 0.25.x
+
+### v2.1.0 (2022-04-20)
+
+- Added `coverageLabel` option.
+
+### v2.0.1 (2022-04-15)
+
+- Added support for TypeDoc 0.24.
+
+### v2.0.0 (2022-06-27)
+
+- Added support for TypeDoc 0.23.
+- Dropped support for Node 12.
+
+### v1.0.2 (2022-03-26)
+
+- Fixed handling of `requiredToBeDocumented` if `"Accessor"` was specified.
+
+### v1.0.1 (2022-03-26)
+
+- Remove redundant `.0` in displayed percentage in badge.
+
+### v1.0.0 (2022-03-26)
+
+- Initial release

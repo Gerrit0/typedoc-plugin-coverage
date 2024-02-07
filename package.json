@@ -1,19 +1,19 @@
 {
   "name": "typedoc-plugin-coverage",
   "version": "2.2.0",
-  "main": "index.js",
+  "type": "module",
+  "exports": "./index.js",
   "license": "MIT",
   "author": "Gerrit Birkeland <gerrit@gerritbirkeland.com>",
   "engines": {
-    "node": ">= 16"
+    "node": ">= 18"
   },
   "devDependencies": {
-    "@types/node": "16",
-    "prettier": "^3.0.2",
-    "typedoc": "^0.25.0",
-    "typescript": "^5.2.2",
-    "vitest": "^0.34.3",
-    "esbuild": "^0.19.2"
+    "@types/node": "18",
+    "prettier": "^3.2.5",
+    "typedoc": "^0.25.7",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2"
   },
   "repository": {
     "type": "git",
@@ -26,12 +26,10 @@
     "typedoc-plugin"
   ],
   "peerDependencies": {
-    "typedoc": "^0.22.12 || 0.23.x || 0.24.x || 0.25.x"
+    "typedoc": "0.25.x"
   },
   "scripts": {
-    "pretest": "npm run build",
     "test": "vitest run",
-    "typecheck": "tsc",
-    "build": "esbuild index.ts --outfile=index.js --bundle --target=node14 --platform=node --external:typedoc"
+    "build": "tsc"
   }
 }

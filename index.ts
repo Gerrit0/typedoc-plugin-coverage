@@ -1,6 +1,14 @@
 import { writeFileSync } from "fs";
 import { join } from "path";
-import { Application, ReflectionKind, Renderer, RendererEvent } from "typedoc";
+import {
+	Application,
+	DeclarationReflection,
+	Reflection,
+	ReflectionKind,
+	ReflectionType,
+	Renderer,
+	RendererEvent,
+} from "typedoc";
 
 declare module "typedoc" {
 	export interface TypeDocOptionMap {
@@ -50,7 +58,9 @@ export function load(app: Application) {
 			.getValue("requiredToBeDocumented")
 			.reduce((acc, kindName) => acc | ReflectionKind[kindName], 0);
 
-		// Expand aliases, ref: https://github.com/TypeStrong/typedoc/blob/master/src/lib/validation/documentation.ts#L22-L36
+		// This code is basically a copy/paste of TypeDoc 0.25.7's validateDocumentation function
+		// https://github.com/TypeStrong/typedoc/blob/master/src/lib/validation/documentation.ts
+		// where we record numbers checked rather than giving warnings.
 		if (kinds & ReflectionKind.FunctionOrMethod) {
 			kinds |= ReflectionKind.CallSignature;
 			kinds = kinds & ~ReflectionKind.FunctionOrMethod;
@@ -64,13 +74,63 @@ export function load(app: Application) {
 			kinds = kinds & ~ReflectionKind.Accessor;
 		}
 
-		for (const refl of Object.values(event.project.reflections)) {
-			if (refl.kindOf(kinds)) {
-				expectedCount += 1;
+		const toProcess = event.project.getReflectionsByKind(kinds);
+		const seen = new Set<Reflection>();
 
-				if (refl.hasComment()) {
-					actualCount += 1;
+		outer: while (toProcess.length) {
+			const ref = toProcess.shift()!;
+			if (seen.has(ref)) continue;
+			seen.add(ref);
+
+			// If we're a non-parameter inside a parameter, we shouldn't care. Parameters don't get deeply documented
+			let r: Reflection | undefined = ref.parent;
+			while (r) {
+				if (r.kindOf(ReflectionKind.Parameter)) {
+					continue outer;
 				}
+				r = r.parent;
+			}
+
+			// Type aliases own their comments, even if they're function-likes.
+			// So if we're a type literal owned by a type alias, don't do anything.
+			if (
+				ref.kindOf(ReflectionKind.TypeLiteral) &&
+				ref.parent?.kindOf(ReflectionKind.TypeAlias)
+			) {
+				toProcess.push(ref.parent);
+				continue;
+			}
+			// Ditto for signatures on type aliases.
+			if (
+				ref.kindOf(ReflectionKind.CallSignature) &&
+				ref.parent?.parent?.kindOf(ReflectionKind.TypeAlias)
+			) {
+				toProcess.push(ref.parent.parent);
+				continue;
+			}
+
+			if (ref instanceof DeclarationReflection) {
+				const signatures =
+					ref.type instanceof ReflectionType
+						? ref.type.declaration.getNonIndexSignatures()
+						: ref.getNonIndexSignatures();
+
+				if (signatures.length) {
+					// We've been asked to validate this reflection, so we should validate that
+					// signatures all have comments, but we'll still have a comment here because
+					// type aliases always have their own comment.
+					toProcess.push(...signatures);
+				}
+			}
+
+			const symbolId = event.project.getSymbolIdFromReflection(ref);
+
+			// Diverging from validateDocumentation here.
+			if (!symbolId || symbolId.fileName.includes("node_modules")) continue;
+
+			++expectedCount;
+			if (ref.hasComment()) {
+				++actualCount;
 			}
 		}
 
