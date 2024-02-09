@@ -3,6 +3,7 @@ import { join } from "path";
 import {
 	Application,
 	DeclarationReflection,
+	ParameterType,
 	Reflection,
 	ReflectionKind,
 	ReflectionType,
@@ -14,6 +15,7 @@ declare module "typedoc" {
 	export interface TypeDocOptionMap {
 		coverageLabel: string;
 		coverageColor: string;
+		coverageOutputPath: string;
 	}
 }
 
@@ -48,6 +50,12 @@ export function load(app: Application) {
 		name: "coverageColor",
 		help: "Define the define the color of the coverage badge background. Defaults to a dynamic color depending on coverage percentage.",
 		defaultValue: "",
+	});
+
+	app.options.addDeclaration({
+		name: "coverageOutputPath",
+		help: "Defines the path where the coverage badge will be written, defaults to <output directory>/coverage.svg.",
+		type: ParameterType.Path,
 	});
 
 	app.renderer.on(Renderer.EVENT_END, (event: RendererEvent) => {
@@ -154,6 +162,9 @@ export function load(app: Application) {
 			.replace(/@ratio@/g, `${percentDocumented}%`)
 			.replace(/@color@/g, color)
 			.replace(/@label@/g, label);
-		writeFileSync(join(event.outputDirectory, "coverage.svg"), badge);
+		const outFile =
+			app.options.getValue("coverageOutputPath") ||
+			join(event.outputDirectory, "coverage.svg");
+		writeFileSync(outFile, badge);
 	});
 }

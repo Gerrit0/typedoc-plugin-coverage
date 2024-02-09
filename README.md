@@ -10,5 +10,6 @@ and only report missing documentation if reflections covered by that option are 
 
 - `coverageLabel` - Define the label for the coverage badge. Defaults to 'document'.
 - `coverageColor` - Define the define the color of the coverage badge background. Defaults to a dynamic color depending on coverage percentage.
+- `coverageOutputPath` - Defines the path where the coverage badge will be written, defaults to `<output directory>/coverage.svg`.
 
 Default colors/icon sourced from [esdoc-coverage-plugin](https://github.com/esdoc/esdoc-plugins/tree/master/esdoc-coverage-plugin)
