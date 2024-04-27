@@ -13,3 +13,6 @@ and only report missing documentation if reflections covered by that option are 
 - `coverageOutputPath` - Defines the path where the coverage badge will be written, defaults to `<output directory>/coverage.svg`.
 
 Default colors/icon sourced from [esdoc-coverage-plugin](https://github.com/esdoc/esdoc-plugins/tree/master/esdoc-coverage-plugin)
+
+If the numbers don't match what you expected, or don't match what TypeDoc implies should be documented, set `--logLevel Verbose` to see
+additional logging about what was considered documented/not documented.

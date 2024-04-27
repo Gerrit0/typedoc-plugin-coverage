@@ -1,3 +1,7 @@
+### v3.1.1 (2024-04-27)
+
+- Updated coverage calculation algorithm to use the same logic as TypeDoc 0.25.14 to determine what members ought to be documented.
+
 ### v3.1.0 (2024-02-09)
 
 - Added `coverageOutputPath` option to specify where the coverage file should be written, #6.

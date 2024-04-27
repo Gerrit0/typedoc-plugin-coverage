@@ -16,6 +16,7 @@ declare module "typedoc" {
 		coverageLabel: string;
 		coverageColor: string;
 		coverageOutputPath: string;
+		coverageDebug: boolean;
 	}
 }
 
@@ -62,13 +63,18 @@ export function load(app: Application) {
 		let actualCount = 0;
 		let expectedCount = 0;
 
+		// This code is basically a copy/paste of TypeDoc 0.25.14's validateDocumentation function
+		// https://github.com/TypeStrong/typedoc/blob/master/src/lib/validation/documentation.ts
+		// where we record numbers checked rather than giving warnings.
+		// ========================================================================================
+
 		let kinds = app.options
 			.getValue("requiredToBeDocumented")
 			.reduce((acc, kindName) => acc | ReflectionKind[kindName], 0);
 
-		// This code is basically a copy/paste of TypeDoc 0.25.7's validateDocumentation function
-		// https://github.com/TypeStrong/typedoc/blob/master/src/lib/validation/documentation.ts
-		// where we record numbers checked rather than giving warnings.
+		// Functions, Constructors, and Accessors never have comments directly on them.
+		// If they are required to be documented, what's really required is that their
+		// contained signatures have a comment.
 		if (kinds & ReflectionKind.FunctionOrMethod) {
 			kinds |= ReflectionKind.CallSignature;
 			kinds = kinds & ~ReflectionKind.FunctionOrMethod;
@@ -108,9 +114,19 @@ export function load(app: Application) {
 				toProcess.push(ref.parent);
 				continue;
 			}
-			// Ditto for signatures on type aliases.
+			// Call signatures are considered documented if they have a comment directly, or their
+			// container has a comment and they are directly within a type literal belonging to that container.
 			if (
 				ref.kindOf(ReflectionKind.CallSignature) &&
+				ref.parent?.kindOf(ReflectionKind.TypeLiteral)
+			) {
+				toProcess.push(ref.parent.parent!);
+				continue;
+			}
+
+			// Call signatures are considered documented if they are directly within a documented type alias.
+			if (
+				ref.kindOf(ReflectionKind.ConstructorSignature) &&
 				ref.parent?.parent?.kindOf(ReflectionKind.TypeAlias)
 			) {
 				toProcess.push(ref.parent.parent);
@@ -125,9 +141,13 @@ export function load(app: Application) {
 
 				if (signatures.length) {
 					// We've been asked to validate this reflection, so we should validate that
-					// signatures all have comments, but we'll still have a comment here because
-					// type aliases always have their own comment.
+					// signatures all have comments
 					toProcess.push(...signatures);
+
+					if (ref.kindOf(ReflectionKind.SignatureContainer)) {
+						// Comments belong to each signature, and will not be included on this object.
+						continue;
+					}
 				}
 			}
 
@@ -140,6 +160,9 @@ export function load(app: Application) {
 			if (ref.hasComment()) {
 				++actualCount;
 			}
+			app.logger.verbose(
+				`[typedoc-plugin-coverage]: ${ref.getFullName()} ${ref.hasComment() ? "is" : "not"} considered documented.`,
+			);
 		}
 
 		const percentDocumented = expectedCount

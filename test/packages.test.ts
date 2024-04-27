@@ -38,9 +38,7 @@ async function expectCoverage(
 
 	const tmp = await mkdtemp(join(tmpdir(), "typedoc-plugin-coverage-"));
 
-	const saved = Object.fromEntries(
-		Object.keys(options).map((key) => [key, app.options.getValue(key)]),
-	);
+	const snapshot = app.options.snapshot();
 
 	try {
 		for (const [key, val] of Object.entries(options)) {
@@ -63,9 +61,7 @@ async function expectCoverage(
 
 		expect(actualCoverage).toBe(`${Math.floor(ratio * 100)}%`);
 	} finally {
-		for (const [key, val] of Object.entries(saved)) {
-			app.options.setValue(key, val);
-		}
+		app.options.restore(snapshot);
 
 		await rm(tmp, { recursive: true, force: true });
 	}
@@ -79,6 +75,13 @@ describe("Plugin", () => {
 	it("Handles function documentation", async () => {
 		// By default, requiredToBeDocumented only covers functions
 		await expectCoverage(2 / 3, "functions");
+	});
+
+	it("Handles constructor documentation", async () => {
+		// By default, requiredToBeDocumented only covers functions
+		await expectCoverage(3 / 4, "constructors", {
+			requiredToBeDocumented: ["Function", "TypeAlias", "Project", "Parameter"],
+		});
 	});
 
 	it("Respects requiredToBeDocumented", async () => {
