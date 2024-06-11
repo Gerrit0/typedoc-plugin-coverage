@@ -17,6 +17,7 @@ declare module "typedoc" {
 		coverageColor: string;
 		coverageOutputPath: string;
 		coverageDebug: boolean;
+		coverageOutputType: string; // json, svg, all
 	}
 }
 
@@ -59,7 +60,14 @@ export function load(app: Application) {
 		type: ParameterType.Path,
 	});
 
+	app.options.addDeclaration({
+		name: "coverageOutputType",
+		help: "Defines the type of the coverage file to be written (svg, json, all).",
+		type: ParameterType.String,
+	});
+
 	app.renderer.on(Renderer.EVENT_END, (event: RendererEvent) => {
+		const notDocumented = [];
 		let actualCount = 0;
 		let expectedCount = 0;
 
@@ -159,6 +167,8 @@ export function load(app: Application) {
 			++expectedCount;
 			if (ref.hasComment()) {
 				++actualCount;
+			} else {
+				notDocumented.push(ref);
 			}
 			app.logger.verbose(
 				`[typedoc-plugin-coverage]: ${ref.getFullName()} ${ref.hasComment() ? "is" : "not"} considered documented.`,
@@ -188,6 +198,39 @@ export function load(app: Application) {
 		const outFile =
 			app.options.getValue("coverageOutputPath") ||
 			join(event.outputDirectory, "coverage.svg");
-		writeFileSync(outFile, badge);
+		const outFileJson = outFile.replace(".svg", ".json");
+		const outputType = app.options.getValue("coverageOutputType") || "svg";
+		switch (outputType) {
+			case "svg":
+				writeFileSync(outFile, badge);
+				break;
+			case "json":
+				writeFileSync(
+					outFileJson,
+					JSON.stringify({
+						percent: percentDocumented,
+						expected: expectedCount,
+						actual: actualCount,
+						notDocumented: notDocumented.map((r) => r.getFullName()),
+					}),
+				);
+				break;
+			case "all":
+				writeFileSync(
+					outFileJson,
+					JSON.stringify({
+						percent: percentDocumented,
+						expected: expectedCount,
+						actual: actualCount,
+						notDocumented: notDocumented.map((r) => r.getFullName()),
+					}),
+				);
+				writeFileSync(outFile, badge);
+				break;
+			default:
+				app.logger.warn(
+					`[typedoc-plugin-coverage]: Invalid coverage output type: ${outputType}`,
+				);
+		}
 	});
 }
