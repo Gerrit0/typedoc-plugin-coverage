@@ -31,7 +31,8 @@ export const CoverageOutputType = {
 } as const;
 
 declare module "typedoc" {
-	export type CoverageOutputType = (typeof CoverageOutputType)[keyof typeof CoverageOutputType];
+	export type CoverageOutputType =
+		(typeof CoverageOutputType)[keyof typeof CoverageOutputType];
 	export interface TypeDocOptionMap {
 		coverageLabel: string;
 		coverageColor: string;
