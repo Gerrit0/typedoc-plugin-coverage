@@ -1,3 +1,7 @@
+### v3.2.0 (2024-06-12)
+
+- Added `coverageOutputType` option to write coverage information as JSON, #7 (@bladerunner2020)
+
 ### v3.1.1 (2024-04-27)
 
 - Updated coverage calculation algorithm to use the same logic as TypeDoc 0.25.14 to determine what members ought to be documented.

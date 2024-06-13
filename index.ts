@@ -221,7 +221,7 @@ export function load(app: Application) {
 		const outFile =
 			app.options.getValue("coverageOutputPath") ||
 			join(event.outputDirectory, "coverage.svg");
-		const outFileJson = outFile.replace(/.svg$/, ".json");
+		const outFileJson = outFile.replace(/\.svg$/, ".json");
 		const outputType = app.options.getValue("coverageOutputType");
 		switch (outputType) {
 			case CoverageOutputType.svg:
