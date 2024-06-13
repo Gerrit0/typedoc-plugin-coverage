@@ -11,12 +11,34 @@ import {
 	RendererEvent,
 } from "typedoc";
 
+/**
+ * Defines the type of the coverage file to be written.
+ * @enum
+ */
+export const CoverageOutputType = {
+	/**
+	 * Write the coverage badge as an SVG file.
+	 */
+	svg: "svg",
+	/**
+	 * Write the coverage as a JSON file.
+	 */
+	json: "json",
+	/**
+	 * Write both the coverage badge as an SVG file and the coverage as a JSON file.
+	 */
+	all: "all",
+} as const;
+
 declare module "typedoc" {
+	export type CoverageOutputType =
+		(typeof CoverageOutputType)[keyof typeof CoverageOutputType];
 	export interface TypeDocOptionMap {
 		coverageLabel: string;
 		coverageColor: string;
 		coverageOutputPath: string;
 		coverageDebug: boolean;
+		coverageOutputType: CoverageOutputType;
 	}
 }
 
@@ -59,7 +81,16 @@ export function load(app: Application) {
 		type: ParameterType.Path,
 	});
 
+	app.options.addDeclaration({
+		name: "coverageOutputType",
+		help: "Defines the type of the coverage file to be written (svg, json, all).",
+		type: ParameterType.Map,
+		map: CoverageOutputType,
+		defaultValue: CoverageOutputType.svg,
+	});
+
 	app.renderer.on(Renderer.EVENT_END, (event: RendererEvent) => {
+		const notDocumented: string[] = [];
 		let actualCount = 0;
 		let expectedCount = 0;
 
@@ -159,6 +190,8 @@ export function load(app: Application) {
 			++expectedCount;
 			if (ref.hasComment()) {
 				++actualCount;
+			} else {
+				notDocumented.push(ref.getFullName());
 			}
 			app.logger.verbose(
 				`[typedoc-plugin-coverage]: ${ref.getFullName()} ${ref.hasComment() ? "is" : "not"} considered documented.`,
@@ -188,6 +221,40 @@ export function load(app: Application) {
 		const outFile =
 			app.options.getValue("coverageOutputPath") ||
 			join(event.outputDirectory, "coverage.svg");
-		writeFileSync(outFile, badge);
+		const outFileJson = outFile.replace(/.svg$/, ".json");
+		const outputType = app.options.getValue("coverageOutputType");
+		switch (outputType) {
+			case CoverageOutputType.svg:
+				writeFileSync(outFile, badge);
+				break;
+			case CoverageOutputType.json:
+				writeFileSync(
+					outFileJson,
+					JSON.stringify({
+						percent: percentDocumented,
+						expected: expectedCount,
+						actual: actualCount,
+						notDocumented,
+					}),
+				);
+				break;
+			case CoverageOutputType.all:
+				writeFileSync(
+					outFileJson,
+					JSON.stringify({
+						percent: percentDocumented,
+						expected: expectedCount,
+						actual: actualCount,
+						notDocumented,
+					}),
+				);
+				writeFileSync(outFile, badge);
+				break;
+			default:
+				// This should never happen, but just in case.
+				app.logger.warn(
+					`[typedoc-plugin-coverage]: Invalid coverage output type: ${outputType}`,
+				);
+		}
 	});
 }
