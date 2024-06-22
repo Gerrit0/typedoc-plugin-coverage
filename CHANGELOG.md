@@ -1,3 +1,7 @@
+### v3.3.0 (2024-06-22)
+
+- Added support for TypeDoc 0.26
+
 ### v3.2.0 (2024-06-12)
 
 - Added `coverageOutputType` option to write coverage information as JSON, #7 (@bladerunner2020)
