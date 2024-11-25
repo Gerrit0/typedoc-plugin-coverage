@@ -1,4 +1,4 @@
-### v3.3.1
+### v3.4.0 (2024-11-24)
 
 - Added support for TypeDoc 0.27
 - Updated coverage calculation algorithm to use the same logic as TypeDoc 0.27.0 to determine what members ought to be documented, #9.

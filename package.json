@@ -1,6 +1,6 @@
 {
   "name": "typedoc-plugin-coverage",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "type": "module",
   "exports": "./index.js",
   "license": "MIT",
