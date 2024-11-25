@@ -184,11 +184,16 @@ export function load(app: Application) {
 
 			const symbolId = event.project.getSymbolIdFromReflection(ref);
 
+			// #2644, signatures may be documented by their parent reflection.
+			const hasComment =
+				ref.hasComment() ||
+				(ref.kindOf(ReflectionKind.SomeSignature) && ref.parent?.hasComment());
+
 			// Diverging from validateDocumentation here.
 			if (!symbolId || symbolId.fileName.includes("node_modules")) continue;
 
 			++expectedCount;
-			if (ref.hasComment()) {
+			if (hasComment) {
 				++actualCount;
 			} else {
 				notDocumented.push(ref.getFullName());
