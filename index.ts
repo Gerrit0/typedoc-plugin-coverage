@@ -43,7 +43,7 @@ declare module "typedoc" {
 	}
 }
 
-const svg = (color: string, label: string, ratio: number, width: number = 104) => {
+const svg = (color: string, label: string, ratio: number, width: number) => {
 	const ratioGapWidth = 20;
 	const ratioRectWidth = 40;
 	const ratioRectX = width - ratioRectWidth;
@@ -105,6 +105,7 @@ export function load(app: Application) {
 		name: "coverageSvgWidth",
 		help: "Defines the width, in pixels, of the generated svg file.",
 		type: ParameterType.Number,
+		defaultValue: 104,
 	});
 
 	app.renderer.on(Renderer.EVENT_END, (event: RendererEvent) => {
