@@ -72,7 +72,7 @@ const svg = (color: string, label: string, ratio: number, width: number) => {
   </g>
 </svg>
 `.trim();
-}
+};
 
 export function load(app: Application) {
 	app.options.addDeclaration({
