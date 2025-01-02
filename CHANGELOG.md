@@ -1,6 +1,6 @@
 ### v3.4.1 (2025-01-02)
 
-- Added `coverageSvgWidth` option to control the width of the generated badge, #11.
+- Added `coverageSvgWidth` option to control the width of the generated badge, #11 (@ctorgalson).
 
 ### v3.4.0 (2024-11-24)
 
