@@ -1,3 +1,7 @@
+### v3.4.1 (2025-01-02)
+
+- Added `coverageSvgWidth` option to control the width of the generated badge, #11.
+
 ### v3.4.0 (2024-11-24)
 
 - Added support for TypeDoc 0.27
