@@ -1,3 +1,10 @@
+### v4.0.0 (2025-03-14)
+
+- Updated for TypeDoc 0.28.
+- TypeDoc's `packagesRequiringDocumentation` option is now respected.
+- TypeDoc's `intentionallyNotDocumented` option is now respected.
+- Dropped support for TypeDoc <0.28 due to different coverage algorithm.
+
 ### v3.4.1 (2025-01-02)
 
 - Added `coverageSvgWidth` option to control the width of the generated badge, #11 (@ctorgalson).

@@ -6,6 +6,7 @@ import {
 	ParameterType,
 	Reflection,
 	ReflectionKind,
+	ReflectionSymbolId,
 	ReflectionType,
 	Renderer,
 	RendererEvent,
@@ -31,8 +32,7 @@ export const CoverageOutputType = {
 } as const;
 
 declare module "typedoc" {
-	export type CoverageOutputType =
-		(typeof CoverageOutputType)[keyof typeof CoverageOutputType];
+	export type CoverageOutputType = (typeof CoverageOutputType)[keyof typeof CoverageOutputType];
 	export interface TypeDocOptionMap {
 		coverageLabel: string;
 		coverageColor: string;
@@ -83,7 +83,8 @@ export function load(app: Application) {
 
 	app.options.addDeclaration({
 		name: "coverageColor",
-		help: "Define the define the color of the coverage badge background. Defaults to a dynamic color depending on coverage percentage.",
+		help:
+			"Define the define the color of the coverage badge background. Defaults to a dynamic color depending on coverage percentage.",
 		defaultValue: "",
 	});
 
@@ -113,7 +114,13 @@ export function load(app: Application) {
 		let actualCount = 0;
 		let expectedCount = 0;
 
-		// This code is basically a copy/paste of TypeDoc 0.25.14's validateDocumentation function
+		const packagesRequiringDocumentation = app.options.isSet("packagesRequiringDocumentation")
+			? app.options.getValue("packagesRequiringDocumentation")
+			: (event.project.packageName ?? ReflectionSymbolId.UNKNOWN_PACKAGE);
+
+		const intentionallyNotDocumented = app.options.getValue("intentionallyNotDocumented");
+
+		// This code is basically a copy/paste of TypeDoc 0.28.0's validateDocumentation function
 		// https://github.com/TypeStrong/typedoc/blob/master/src/lib/validation/documentation.ts
 		// where we record numbers checked rather than giving warnings.
 		// ========================================================================================
@@ -158,8 +165,8 @@ export function load(app: Application) {
 			// Type aliases own their comments, even if they're function-likes.
 			// So if we're a type literal owned by a type alias, don't do anything.
 			if (
-				ref.kindOf(ReflectionKind.TypeLiteral) &&
-				ref.parent?.kindOf(ReflectionKind.TypeAlias)
+				ref.kindOf(ReflectionKind.TypeLiteral)
+				&& ref.parent?.kindOf(ReflectionKind.TypeAlias)
 			) {
 				toProcess.push(ref.parent);
 				continue;
@@ -167,8 +174,8 @@ export function load(app: Application) {
 			// Call signatures are considered documented if they have a comment directly, or their
 			// container has a comment and they are directly within a type literal belonging to that container.
 			if (
-				ref.kindOf(ReflectionKind.CallSignature) &&
-				ref.parent?.kindOf(ReflectionKind.TypeLiteral)
+				ref.kindOf(ReflectionKind.CallSignature)
+				&& ref.parent?.kindOf(ReflectionKind.TypeLiteral)
 			) {
 				toProcess.push(ref.parent.parent!);
 				continue;
@@ -176,18 +183,17 @@ export function load(app: Application) {
 
 			// Call signatures are considered documented if they are directly within a documented type alias.
 			if (
-				ref.kindOf(ReflectionKind.ConstructorSignature) &&
-				ref.parent?.parent?.kindOf(ReflectionKind.TypeAlias)
+				ref.kindOf(ReflectionKind.ConstructorSignature)
+				&& ref.parent?.parent?.kindOf(ReflectionKind.TypeAlias)
 			) {
 				toProcess.push(ref.parent.parent);
 				continue;
 			}
 
 			if (ref instanceof DeclarationReflection) {
-				const signatures =
-					ref.type instanceof ReflectionType
-						? ref.type.declaration.getNonIndexSignatures()
-						: ref.getNonIndexSignatures();
+				const signatures = ref.type instanceof ReflectionType
+					? ref.type.declaration.getNonIndexSignatures()
+					: ref.getNonIndexSignatures();
 
 				if (signatures.length) {
 					// We've been asked to validate this reflection, so we should validate that
@@ -204,12 +210,12 @@ export function load(app: Application) {
 			const symbolId = event.project.getSymbolIdFromReflection(ref);
 
 			// #2644, signatures may be documented by their parent reflection.
-			const hasComment =
-				ref.hasComment() ||
-				(ref.kindOf(ReflectionKind.SomeSignature) && ref.parent?.hasComment());
+			const hasComment = ref.hasComment()
+				|| (ref.kindOf(ReflectionKind.SomeSignature) && ref.parent?.hasComment());
 
 			// Diverging from validateDocumentation here.
-			if (!symbolId || symbolId.fileName.includes("node_modules")) continue;
+			if (!symbolId || !packagesRequiringDocumentation.includes(symbolId.packageName)) continue;
+			if (intentionallyNotDocumented.includes(ref.getFriendlyFullName())) continue;
 
 			++expectedCount;
 			if (hasComment) {
@@ -240,9 +246,8 @@ export function load(app: Application) {
 
 		const width = app.options.getValue("coverageSvgWidth");
 		const badge = svg(color, label, percentDocumented, width);
-		const outFile =
-			app.options.getValue("coverageOutputPath") ||
-			join(event.outputDirectory, "coverage.svg");
+		const outFile = app.options.getValue("coverageOutputPath")
+			|| join(event.outputDirectory, "coverage.svg");
 		const outFileJson = outFile.replace(/\.svg$/, ".json");
 		const outputType = app.options.getValue("coverageOutputType");
 		switch (outputType) {

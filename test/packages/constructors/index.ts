@@ -14,6 +14,6 @@
  * Ctor doc
  * @param x x doc
  */
-export type Ctor = new (x: string) => object;
+export type Ctor = new(x: string) => object;
 
 export function foo() {}

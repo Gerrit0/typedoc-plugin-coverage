@@ -21,9 +21,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Install pnpm
+        if: steps.check.outputs.changed == 'true'
+        run: npm i -g pnpm@10
       - name: Install
         if: steps.check.outputs.changed == 'true'
-        run: npm install
+        run: pnpm install
       - name: Build
         if: steps.check.outputs.changed == 'true'
         run: npm run build
@@ -38,6 +41,6 @@ jobs:
       - name: Publish
         if: steps.check.outputs.changed == 'true'
         run: |
-          npm publish --non-interactive
+          pnpm publish
           git tag v$(jq .version package.json -r)
           git push --tags

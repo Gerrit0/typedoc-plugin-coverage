@@ -1,9 +1,9 @@
-import * as ts from "typescript";
-import { join } from "path";
-import { Application, TSConfigReader, TypeDocOptions } from "typedoc";
-import { it, expect, describe, beforeAll } from "vitest";
 import { mkdtemp, readFile, rm } from "fs/promises";
 import { tmpdir } from "os";
+import { join } from "path";
+import { Application, TSConfigReader, TypeDocOptions } from "typedoc";
+import * as ts from "typescript";
+import { beforeAll, describe, expect, it } from "vitest";
 import { load } from "../index.js";
 
 let app: Application;
@@ -94,5 +94,18 @@ describe("Plugin", () => {
 		await expectCoverage(1 / 1, "functions", {
 			requiredToBeDocumented: ["Project"],
 		});
+	});
+
+	it("Respects packagesRequiringDocumentation", async () => {
+		await expectCoverage(2 / 3, "packagesRequiringDoc", {
+			packagesRequiringDocumentation: ["typedoc-plugin-coverage", "@gerrit0/sub-package-not-doc"],
+		});
+
+		await expectCoverage(1 / 2, "packagesRequiringDoc", {
+			packagesRequiringDocumentation: ["@gerrit0/sub-package-not-doc"],
+		});
+
+		// Defaults to just requiring this package
+		await expectCoverage(1 / 1, "packagesRequiringDoc", {});
 	});
 });
