@@ -1,4 +1,4 @@
-### v4.0.0 (2025-03-14)
+### v4.0.0 (2025-04-19)
 
 - Updated for TypeDoc 0.28.
 - TypeDoc's `packagesRequiringDocumentation` option is now respected.
