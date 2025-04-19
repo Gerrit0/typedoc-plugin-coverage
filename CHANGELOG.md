@@ -1,3 +1,7 @@
+### v4.0.1 (2025-04-19)
+
+- Fix broken build in publish of v4.0.0
+
 ### v4.0.0 (2025-04-19)
 
 - Updated for TypeDoc 0.28.
