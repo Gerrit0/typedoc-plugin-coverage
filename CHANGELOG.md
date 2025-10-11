@@ -1,3 +1,7 @@
+### v4.0.2 (2025-10-11)
+
+- No behavior changes, migrated release workflow to use trusted publishing.
+
 ### v4.0.1 (2025-04-19)
 
 - Fix broken build in publish of v4.0.0
