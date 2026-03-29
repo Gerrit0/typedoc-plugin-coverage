@@ -8,7 +8,7 @@ and only report missing documentation if reflections covered by that option are 
 
 ## Installation
 
-Add `typedoc-plugin-coverage` to the `plugin` array in your `typedoc-options.js` configuration file to engage the plugin.
+Add `typedoc-plugin-coverage` to the `plugin` array in your `typedoc.config.js` configuration file to engage the plugin.
 
 ```ts
 module.exports = {
