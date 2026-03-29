@@ -1,5 +1,5 @@
 import { writeFileSync } from "fs";
-import { join } from "path";
+import { join, parse } from "path";
 import {
 	Application,
 	DeclarationReflection,
@@ -248,7 +248,8 @@ export function load(app: Application) {
 		const badge = svg(color, label, percentDocumented, width);
 		const outFile = app.options.getValue("coverageOutputPath")
 			|| join(event.outputDirectory, "coverage.svg");
-		const outFileJson = outFile.replace(/\.svg$/, ".json");
+		const { dir, name } = parse(outFile);
+		const outFileJson = join(dir, `${name}.json`);
 		const outputType = app.options.getValue("coverageOutputType");
 		switch (outputType) {
 			case CoverageOutputType.svg:

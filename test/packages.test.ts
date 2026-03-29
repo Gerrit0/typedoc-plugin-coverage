@@ -1,10 +1,11 @@
+import { existsSync } from "fs";
 import { mkdtemp, readFile, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { Application, TSConfigReader, TypeDocOptions } from "typedoc";
 import * as ts from "typescript";
 import { beforeAll, describe, expect, it } from "vitest";
-import { load } from "../index.js";
+import { CoverageOutputType, load } from "../index.js";
 
 let app: Application;
 let program: ts.Program;
@@ -94,6 +95,46 @@ describe("Plugin", () => {
 		await expectCoverage(1 / 1, "functions", {
 			requiredToBeDocumented: ["Project"],
 		});
+	});
+
+	it("Writes both SVG and JSON for output type 'all' with custom path", async () => {
+		const sf = program.getSourceFile(
+			join(__dirname, "packages", "functions", "index.ts"),
+		);
+		expect(sf).toBeDefined();
+
+		const tmp = await mkdtemp(join(tmpdir(), "typedoc-plugin-coverage-"));
+		const customPath = join(tmp, "my-badge.custom");
+
+		const snapshot = app.options.snapshot();
+		try {
+			app.options.setValue("coverageOutputType", CoverageOutputType.all);
+			app.options.setValue("coverageOutputPath", customPath);
+
+			const project = app.converter.convert([
+				{
+					displayName: "functions",
+					program,
+					sourceFile: sf!,
+				},
+			]);
+			await app.renderer.render(project, tmp);
+
+			expect(existsSync(customPath)).toBe(true);
+			const svgContent = await readFile(customPath, "utf-8");
+			expect(svgContent).toContain("<svg");
+
+			const jsonPath = join(tmp, "my-badge.json");
+			expect(existsSync(jsonPath)).toBe(true);
+			const jsonContent = JSON.parse(await readFile(jsonPath, "utf-8"));
+			expect(jsonContent).toHaveProperty("percent");
+			expect(jsonContent).toHaveProperty("expected");
+			expect(jsonContent).toHaveProperty("actual");
+			expect(jsonContent).toHaveProperty("notDocumented");
+		} finally {
+			app.options.restore(snapshot);
+			await rm(tmp, { recursive: true, force: true });
+		}
 	});
 
 	it("Respects packagesRequiringDocumentation", async () => {
