@@ -249,11 +249,12 @@ export function load(app: Application) {
 		const outFile = app.options.getValue("coverageOutputPath")
 			|| join(event.outputDirectory, "coverage.svg");
 		const { dir, name } = parse(outFile);
+		const outFileSvg = join(dir, `${name}.svg`);
 		const outFileJson = join(dir, `${name}.json`);
 		const outputType = app.options.getValue("coverageOutputType");
 		switch (outputType) {
 			case CoverageOutputType.svg:
-				writeFileSync(outFile, badge);
+				writeFileSync(outFileSvg, badge);
 				break;
 			case CoverageOutputType.json:
 				writeFileSync(
@@ -276,7 +277,7 @@ export function load(app: Application) {
 						notDocumented,
 					}),
 				);
-				writeFileSync(outFile, badge);
+				writeFileSync(outFileSvg, badge);
 				break;
 			default:
 				// This should never happen, but just in case.
