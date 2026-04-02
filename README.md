@@ -35,8 +35,8 @@ additional logging about what was considered documented/not documented.
 
 ```ts
 module.exports = {
-  plugin: ['typedoc-plugin-coverage'],
-  coverageOutputPath: './coverage-typedoc/coverage-typedoc.json',
-  coverageOutputType: 'json'
+	plugin: ['typedoc-plugin-coverage'],
+	coverageOutputPath: './coverage-typedoc/coverage-typedoc.json',
+	coverageOutputType: 'json'
 };
 ```
