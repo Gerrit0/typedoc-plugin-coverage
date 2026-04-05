@@ -31,14 +31,36 @@ export const CoverageOutputType = {
 	all: "all",
 } as const;
 
+export type CoverageOutputType = (typeof CoverageOutputType)[keyof typeof CoverageOutputType];
+
 declare module "typedoc" {
-	export type CoverageOutputType = (typeof CoverageOutputType)[keyof typeof CoverageOutputType];
 	export interface TypeDocOptionMap {
+		/**
+		 * The text to display on the coverage badge label.
+		 * @defaultValue "document"
+		 */
 		coverageLabel: string;
+		/**
+		 * The color to use for the coverage badge label.
+		 * If unspecified, will be dynamically computed based on the coverage percentage.
+		 */
 		coverageColor: string;
+		/**
+		 * The location where the coverage badge will be written, **relative to the config directory**.
+		 * @defaultValue `<output directory>/coverage.svg`
+		 */
 		coverageOutputPath: string;
+		// TODO: This is completely unused; we should probably remove it
 		coverageDebug: boolean;
+		/**
+		 * Whether to write the coverage badge as an SVG file, JSON file or both
+		 * @defaultValue `svg`
+		 */
 		coverageOutputType: CoverageOutputType;
+		/**
+		 * The width of the printed SVG in pixels.
+		 * @defaultValue `104`
+		 */
 		coverageSvgWidth: number;
 	}
 }
@@ -74,7 +96,10 @@ const svg = (color: string, label: string, ratio: number, width: number) => {
 `.trim();
 };
 
-export function load(app: Application) {
+/**
+ * Load the `typedoc-plugin-coverage` plugin.
+ */
+export function load(app: Application): void {
 	app.options.addDeclaration({
 		name: "coverageLabel",
 		help: "Define the label for the coverage badge. Defaults to 'document'.",

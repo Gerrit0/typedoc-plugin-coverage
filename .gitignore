@@ -4,6 +4,7 @@ docs
 yarn-error.log
 out.json
 
+*.d.ts
 *.js.map
 *.js
 !scripts/*.js
