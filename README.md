@@ -16,5 +16,18 @@ and only report missing documentation if reflections covered by that option are 
 
 Default colors/icon sourced from [esdoc-coverage-plugin](https://github.com/esdoc/esdoc-plugins/tree/master/esdoc-coverage-plugin)
 
+Consumers using a JS file to configure TypeDoc can import the plugin directly to obtain type information for the additional options:
+
+```js
+// you can also import the `load` function directly if you want (ideally renamed to avoid naming conflicts)
+import "typedoc-plugin-coverage";
+
+/** @type {Partial<import("typedoc").TypeDocOptions>} */
+const config = {
+	// will typecheck without errors
+	coverageLabel: "Documented",
+};
+```
+
 If the numbers don't match what you expected, or don't match what TypeDoc implies should be documented, set `--logLevel Verbose` to see
 additional logging about what was considered documented/not documented.
