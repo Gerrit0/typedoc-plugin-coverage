@@ -8,5 +8,4 @@
 		"skipLibCheck": true
 	},
 	"files": ["index.ts"],
-	"exclude": ["test/packages"]
 }
