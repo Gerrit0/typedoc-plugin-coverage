@@ -22,7 +22,7 @@ Consumers using a JS file to configure TypeDoc can import the plugin directly to
 // you can also import the `load` function directly if you want (ideally renamed to avoid naming conflicts)
 import "typedoc-plugin-coverage";
 
-/** @type {Partial<import("typedoc").TypeDocOptions>} */
+/** @type {import("typedoc").TypeDocOptions} */
 const config = {
 	// will typecheck without errors
 	coverageLabel: "Documented",

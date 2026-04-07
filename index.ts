@@ -13,7 +13,7 @@ import {
 } from "typedoc";
 
 /**
- * Defines the type of the coverage file to be written.
+ * Options for the type of coverage file to be written.
  * @enum
  */
 export const CoverageOutputType = {
@@ -42,18 +42,18 @@ declare module "typedoc" {
 		coverageLabel: string;
 		/**
 		 * The color to use for the coverage badge label.
-		 * If unspecified, will be dynamically computed based on the coverage percentage.
+		 * Defaults to a dynamic color based on the coverage percentage.
 		 */
 		coverageColor: string;
 		/**
-		 * The location where the coverage badge will be written, **relative to the config directory**.
+		 * The location where the SVG coverage badge will be written.
 		 * @defaultValue `<output directory>/coverage.svg`
+		 * @remarks
+		 * This will also be used to determine the location of the JSON output if `coverageOutputType` is set to `json` or `all` (replacing the `.svg` extension with `.json`).
 		 */
 		coverageOutputPath: string;
-		// TODO: This is completely unused; we should probably remove it
-		coverageDebug: boolean;
 		/**
-		 * Whether to write the coverage badge as an SVG file, JSON file or both
+		 * Whether to write the coverage badge as an SVG file, JSON file or both.
 		 * @defaultValue `svg`
 		 */
 		coverageOutputType: CoverageOutputType;
@@ -98,30 +98,31 @@ const svg = (color: string, label: string, ratio: number, width: number) => {
 
 /**
  * Load the `typedoc-plugin-coverage` plugin.
+ * @param app - The {@linkcode Application} instance to load the plugin into.
  */
 export function load(app: Application): void {
 	app.options.addDeclaration({
 		name: "coverageLabel",
-		help: "Define the label for the coverage badge. Defaults to 'document'.",
+		help: "The text to display on the coverage badge label. Defaults to 'document'.",
 		defaultValue: "document",
 	});
 
 	app.options.addDeclaration({
 		name: "coverageColor",
-		help:
-			"Define the define the color of the coverage badge background. Defaults to a dynamic color depending on coverage percentage.",
+		help: "The color to use for the coverage badge background. "
+			+ "Defaults to a dynamic color depending on the current coverage percentage.",
 		defaultValue: "",
 	});
 
 	app.options.addDeclaration({
 		name: "coverageOutputPath",
-		help: "Defines the path where the coverage badge will be written, defaults to <output directory>/coverage.svg.",
+		help: "The location where the SVG coverage badge will be written. Defaults to '<output directory>/coverage.svg'.",
 		type: ParameterType.Path,
 	});
 
 	app.options.addDeclaration({
 		name: "coverageOutputType",
-		help: "Defines the type of the coverage file to be written (svg, json, all).",
+		help: "Whether to write the coverage badge as an SVG file, JSON file or both. Defaults to 'svg'.",
 		type: ParameterType.Map,
 		map: CoverageOutputType,
 		defaultValue: CoverageOutputType.svg,
@@ -129,7 +130,7 @@ export function load(app: Application): void {
 
 	app.options.addDeclaration({
 		name: "coverageSvgWidth",
-		help: "Defines the width, in pixels, of the generated svg file.",
+		help: "The width, in pixels, of the generated SVG file.",
 		type: ParameterType.Number,
 		defaultValue: 104,
 	});

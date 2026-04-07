@@ -8,3 +8,4 @@ out.json
 *.js.map
 *.js
 !scripts/*.js
+tsconfig.vitest-temp.json

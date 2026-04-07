@@ -1,10 +1,11 @@
 {
 	"compilerOptions": {
-		"target": "es2015",
+		"target": "es2020",
 		"module": "node16",
-		"moduleResolution": "node16", // required for vitest's type testing to not crash horribly
+		// required for vitest's type testing to not crash horribly
+		"moduleResolution": "node16",
 		// TS6 and onwards default `types` to including nothing by default
-		// (which causes annoying errors for contributors using TSGo)
+		// (which causes annoying errors for contributors using TSGo).
 		"types": ["@types/node"],
 		"isolatedModules": true,
 		"forceConsistentCasingInFileNames": true,
@@ -14,5 +15,5 @@
 		"stripInternal": true
 	},
 	"files": ["index.ts"],
-	"exclude": ["test"]
+	"exclude": ["test/packages"]
 }
