@@ -29,7 +29,7 @@
 		"typedoc-plugin"
 	],
 	"scripts": {
-		"test": "vitest run",
+		"test": "vitest run && tsc -p test",
 		"build": "tsc",
 		"lint": "dprint check"
 	},
