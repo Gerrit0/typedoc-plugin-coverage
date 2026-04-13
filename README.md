@@ -6,7 +6,19 @@ This plugin will write a `coverage.svg` badge and/or `coverage.json` to your out
 includes the percentage of your API surface which is documented. It will respect TypeDoc's `requiredToBeDocumented` option,
 and only report missing documentation if reflections covered by that option are undocumented.
 
+## Installation
+
+Add `typedoc-plugin-coverage` to the `plugin` array in your `typedoc.config.js` configuration file to engage the plugin.
+
+```ts
+module.exports = {
+	plugin: ["typedoc-plugin-coverage"],
+};
+```
+
 ## Options
+
+To configure the plugin, add any of the following members:
 
 - `coverageLabel` - Define the label for the coverage badge. Defaults to 'document'.
 - `coverageColor` - Define the define the color of the coverage badge background. Defaults to a dynamic color depending on coverage percentage.
@@ -18,3 +30,13 @@ Default colors/icon sourced from [esdoc-coverage-plugin](https://github.com/esdo
 
 If the numbers don't match what you expected, or don't match what TypeDoc implies should be documented, set `--logLevel Verbose` to see
 additional logging about what was considered documented/not documented.
+
+### Example config
+
+```ts
+module.exports = {
+	plugin: ["typedoc-plugin-coverage"],
+	coverageOutputPath: "./coverage-typedoc/coverage-typedoc.json",
+	coverageOutputType: "json",
+};
+```
