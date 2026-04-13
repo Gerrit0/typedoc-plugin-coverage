@@ -6,50 +6,58 @@ This plugin will write a `coverage.svg` badge and/or `coverage.json` to your out
 includes the percentage of your API surface which is documented. It will respect TypeDoc's `requiredToBeDocumented` option,
 and only report missing documentation if reflections covered by that option are undocumented.
 
-## Installation
-
-Add `typedoc-plugin-coverage` to the `plugin` array in your `typedoc.config.js` configuration file to engage the plugin.
-
-```ts
-module.exports = {
-	plugin: ["typedoc-plugin-coverage"],
-};
-```
-
-## Options
-
-To configure the plugin, add any of the following members:
-
-- `coverageLabel` - Define the label for the coverage badge. Defaults to 'document'.
-- `coverageColor` - Define the define the color of the coverage badge background. Defaults to a dynamic color depending on coverage percentage.
-- `coverageOutputPath` - Defines the path where the coverage badge will be written, defaults to `<output directory>/coverage.svg`.
-- `coverageOutputType` - Defines the type of the coverage file to be written ('svg', 'json', 'all'). Defaults to 'svg'.
-- `coverageSvgWidth` - Defines the width, in pixels, of the generated svg file.
-
-Default colors/icon sourced from [esdoc-coverage-plugin](https://github.com/esdoc/esdoc-plugins/tree/master/esdoc-coverage-plugin)
-
-Consumers using a JS file to configure TypeDoc can import the plugin directly to obtain type information for the additional options:
-
-```js
-// you can also import the `load` function directly if you want (ideally renamed to avoid naming conflicts)
-import "typedoc-plugin-coverage";
-
-/** @type {import("typedoc").TypeDocOptions} */
-const config = {
-	// will typecheck without errors
-	coverageLabel: "Documented",
-};
-```
-
 If the numbers don't match what you expected, or don't match what TypeDoc implies should be documented, set `--logLevel Verbose` to see
 additional logging about what was considered documented/not documented.
 
-### Example config
+## Installation
+
+Add `typedoc-plugin-coverage` to the `plugin` array in your `typedoc.config.mjs` configuration file to load the plugin. A JavaScript
+configuration file is recommended so that your editor's autocomplete discovers plugin options.
 
 ```ts
-module.exports = {
-	plugin: ["typedoc-plugin-coverage"],
-	coverageOutputPath: "./coverage-typedoc/coverage-typedoc.json",
-	coverageOutputType: "json",
+import { coveragePlugin } from "typedoc-plugin-coverage";
+
+/** @type {import("typedoc").TypeDocOptions} */
+const config = {
+	plugin: [coveragePlugin],
 };
+
+export default config;
+```
+
+Note: Prior to TypeDoc 0.28.20, coverage information is written when generating HTML output, so will not be
+created if output is being produced with JSON or Markdown only.
+
+## Options
+
+To configure the plugin, add any of the following options:
+
+| Option               | Description                                                    | Default                                  |
+| -------------------- | -------------------------------------------------------------- | ---------------------------------------- |
+| `coverageLabel`      | Label shown on the produced SVG                                | "document"                               |
+| `coverageColor`      | Color of the coverage badge background                         | Dynamic according to coverage percentage |
+| `coverageOutputPath` | Path where the coverage badge will be written                  | `<html output directory>/coverage.svg`   |
+| `coverageOutputType` | Type of the coverage file to be written (`svg`, `json`, `all`) | `svg`                                    |
+| `coverageSvgWidth`   | Defines the width, in pixels, of the generated svg file        | 104                                      |
+
+Default colors/icon sourced from [esdoc-coverage-plugin](https://github.com/esdoc/esdoc-plugins/tree/master/esdoc-coverage-plugin)
+
+```js
+import { coveragePlugin } from "typedoc-plugin-coverage";
+
+/** @type {import("typedoc").TypeDocOptions} */
+const config = {
+	// If using a JS config file, you can reference the plugin function here:
+	plugin: [coveragePlugin],
+	// If using a JSON config file, reference the package name:
+	// plugin: ["typedoc-plugin-coverage"],
+
+	coverageLabel: "Documented",
+	// coverageColor: "#5330c8",
+	coverageOutputPath: "./out/documentation-coverage.json",
+	coverageOutputType: "all",
+	coverageSvgWidth: 120,
+};
+
+export default config;
 ```

@@ -1,9 +1,10 @@
-import { writeFileSync } from "fs";
+import { writeFileSync, mkdirSync } from "fs";
 import { join, parse } from "path";
 import {
 	Application,
 	DeclarationReflection,
 	ParameterType,
+	ProjectReflection,
 	Reflection,
 	ReflectionKind,
 	ReflectionSymbolId,
@@ -97,10 +98,18 @@ const svg = (color: string, label: string, ratio: number, width: number) => {
 };
 
 /**
+ * Alias of {@linkcode coveragePlugin} which is used by TypeDoc when the plugin's name
+ * is specified in the `plugins` option.
+ */
+export function load(app: Application) {
+	coveragePlugin(app);
+}
+
+/**
  * Load the `typedoc-plugin-coverage` plugin.
  * @param app - The {@linkcode Application} instance to load the plugin into.
  */
-export function load(app: Application): void {
+export function coveragePlugin(app: Application): void {
 	app.options.addDeclaration({
 		name: "coverageLabel",
 		help: "The text to display on the coverage badge label. Defaults to 'document'.",
@@ -135,181 +144,208 @@ export function load(app: Application): void {
 		defaultValue: 104,
 	});
 
-	app.renderer.on(Renderer.EVENT_END, (event: RendererEvent) => {
-		const notDocumented: string[] = [];
-		let actualCount = 0;
-		let expectedCount = 0;
+	// For TypeDoc 0.28.20 and later we can generate our output with the generate outputs event
+	// which will work if the user is only using JSON or markdown output but prior to that, the
+	// event didn't exist so we assume generation should occur during the HTML output generation.
+	if ("EVENT_GENERATE_OUTPUTS_END" in Application) {
+		// @ts-expect-error not yet released
+		app.on(Application.EVENT_GENERATE_OUTPUTS_END, (project: ProjectReflection) => {
+			generateCoverageOutputs(app, project);
+		});
+	} else {
+		app.renderer.on(Renderer.EVENT_END, (event: RendererEvent) => {
+			generateCoverageOutputs(app, event.project);
+		});
+	}
+}
 
-		const packagesRequiringDocumentation = app.options.isSet("packagesRequiringDocumentation")
-			? app.options.getValue("packagesRequiringDocumentation")
-			: (event.project.packageName ?? ReflectionSymbolId.UNKNOWN_PACKAGE);
+// Override the function name so TypeDoc's log message shows the plugin name rather
+// than the function name when loading via a config file that imports the function.
+Object.defineProperty(coveragePlugin, "name", {
+	value: "typedoc-plugin-coverage",
+});
+Object.defineProperty(load, "name", {
+	value: "typedoc-plugin-coverage",
+});
 
-		const intentionallyNotDocumented = app.options.getValue("intentionallyNotDocumented");
+function generateCoverageOutputs(app: Application, project: ProjectReflection) {
+	const notDocumented: string[] = [];
+	let actualCount = 0;
+	let expectedCount = 0;
 
-		// This code is basically a copy/paste of TypeDoc 0.28.0's validateDocumentation function
-		// https://github.com/TypeStrong/typedoc/blob/master/src/lib/validation/documentation.ts
-		// where we record numbers checked rather than giving warnings.
-		// ========================================================================================
+	const packagesRequiringDocumentation = app.options.isSet("packagesRequiringDocumentation")
+		? app.options.getValue("packagesRequiringDocumentation")
+		: (project.packageName ?? ReflectionSymbolId.UNKNOWN_PACKAGE);
 
-		let kinds = app.options
-			.getValue("requiredToBeDocumented")
-			.reduce((acc, kindName) => acc | ReflectionKind[kindName], 0);
+	const intentionallyNotDocumented = app.options.getValue("intentionallyNotDocumented");
 
-		// Functions, Constructors, and Accessors never have comments directly on them.
-		// If they are required to be documented, what's really required is that their
-		// contained signatures have a comment.
-		if (kinds & ReflectionKind.FunctionOrMethod) {
-			kinds |= ReflectionKind.CallSignature;
-			kinds = kinds & ~ReflectionKind.FunctionOrMethod;
+	// This code is basically a copy/paste of TypeDoc 0.28.0's validateDocumentation function
+	// https://github.com/TypeStrong/typedoc/blob/master/src/lib/validation/documentation.ts
+	// where we record numbers checked rather than giving warnings.
+	// ========================================================================================
+
+	let kinds = app.options
+		.getValue("requiredToBeDocumented")
+		.reduce((acc, kindName) => acc | ReflectionKind[kindName], 0);
+
+	// Functions, Constructors, and Accessors never have comments directly on them.
+	// If they are required to be documented, what's really required is that their
+	// contained signatures have a comment.
+	if (kinds & ReflectionKind.FunctionOrMethod) {
+		kinds |= ReflectionKind.CallSignature;
+		kinds = kinds & ~ReflectionKind.FunctionOrMethod;
+	}
+	if (kinds & ReflectionKind.Constructor) {
+		kinds |= ReflectionKind.ConstructorSignature;
+		kinds = kinds & ~ReflectionKind.Constructor;
+	}
+	if (kinds & ReflectionKind.Accessor) {
+		kinds |= ReflectionKind.GetSignature | ReflectionKind.SetSignature;
+		kinds = kinds & ~ReflectionKind.Accessor;
+	}
+
+	const toProcess = project.getReflectionsByKind(kinds);
+	const seen = new Set<Reflection>();
+
+	outer: while (toProcess.length) {
+		const ref = toProcess.shift()!;
+		if (seen.has(ref)) continue;
+		seen.add(ref);
+
+		// If we're a non-parameter inside a parameter, we shouldn't care. Parameters don't get deeply documented
+		let r: Reflection | undefined = ref.parent;
+		while (r) {
+			if (r.kindOf(ReflectionKind.Parameter)) {
+				continue outer;
+			}
+			r = r.parent;
 		}
-		if (kinds & ReflectionKind.Constructor) {
-			kinds |= ReflectionKind.ConstructorSignature;
-			kinds = kinds & ~ReflectionKind.Constructor;
+
+		// Type aliases own their comments, even if they're function-likes.
+		// So if we're a type literal owned by a type alias, don't do anything.
+		if (
+			ref.kindOf(ReflectionKind.TypeLiteral)
+			&& ref.parent?.kindOf(ReflectionKind.TypeAlias)
+		) {
+			toProcess.push(ref.parent);
+			continue;
 		}
-		if (kinds & ReflectionKind.Accessor) {
-			kinds |= ReflectionKind.GetSignature | ReflectionKind.SetSignature;
-			kinds = kinds & ~ReflectionKind.Accessor;
+		// Call signatures are considered documented if they have a comment directly, or their
+		// container has a comment and they are directly within a type literal belonging to that container.
+		if (
+			ref.kindOf(ReflectionKind.CallSignature)
+			&& ref.parent?.kindOf(ReflectionKind.TypeLiteral)
+		) {
+			toProcess.push(ref.parent.parent!);
+			continue;
 		}
 
-		const toProcess = event.project.getReflectionsByKind(kinds);
-		const seen = new Set<Reflection>();
+		// Call signatures are considered documented if they are directly within a documented type alias.
+		if (
+			ref.kindOf(ReflectionKind.ConstructorSignature)
+			&& ref.parent?.parent?.kindOf(ReflectionKind.TypeAlias)
+		) {
+			toProcess.push(ref.parent.parent);
+			continue;
+		}
 
-		outer: while (toProcess.length) {
-			const ref = toProcess.shift()!;
-			if (seen.has(ref)) continue;
-			seen.add(ref);
+		if (ref instanceof DeclarationReflection) {
+			const signatures = ref.type instanceof ReflectionType
+				? ref.type.declaration.getNonIndexSignatures()
+				: ref.getNonIndexSignatures();
 
-			// If we're a non-parameter inside a parameter, we shouldn't care. Parameters don't get deeply documented
-			let r: Reflection | undefined = ref.parent;
-			while (r) {
-				if (r.kindOf(ReflectionKind.Parameter)) {
-					continue outer;
+			if (signatures.length) {
+				// We've been asked to validate this reflection, so we should validate that
+				// signatures all have comments
+				toProcess.push(...signatures);
+
+				if (ref.kindOf(ReflectionKind.SignatureContainer)) {
+					// Comments belong to each signature, and will not be included on this object.
+					continue;
 				}
-				r = r.parent;
 			}
+		}
 
-			// Type aliases own their comments, even if they're function-likes.
-			// So if we're a type literal owned by a type alias, don't do anything.
-			if (
-				ref.kindOf(ReflectionKind.TypeLiteral)
-				&& ref.parent?.kindOf(ReflectionKind.TypeAlias)
-			) {
-				toProcess.push(ref.parent);
-				continue;
-			}
-			// Call signatures are considered documented if they have a comment directly, or their
-			// container has a comment and they are directly within a type literal belonging to that container.
-			if (
-				ref.kindOf(ReflectionKind.CallSignature)
-				&& ref.parent?.kindOf(ReflectionKind.TypeLiteral)
-			) {
-				toProcess.push(ref.parent.parent!);
-				continue;
-			}
+		const symbolId = project.getSymbolIdFromReflection(ref);
 
-			// Call signatures are considered documented if they are directly within a documented type alias.
-			if (
-				ref.kindOf(ReflectionKind.ConstructorSignature)
-				&& ref.parent?.parent?.kindOf(ReflectionKind.TypeAlias)
-			) {
-				toProcess.push(ref.parent.parent);
-				continue;
-			}
+		// #2644, signatures may be documented by their parent reflection.
+		const hasComment = ref.hasComment()
+			|| (ref.kindOf(ReflectionKind.SomeSignature) && ref.parent?.hasComment());
 
-			if (ref instanceof DeclarationReflection) {
-				const signatures = ref.type instanceof ReflectionType
-					? ref.type.declaration.getNonIndexSignatures()
-					: ref.getNonIndexSignatures();
+		// Diverging from validateDocumentation here.
+		if (!symbolId || !packagesRequiringDocumentation.includes(symbolId.packageName)) continue;
+		if (intentionallyNotDocumented.includes(ref.getFriendlyFullName())) continue;
 
-				if (signatures.length) {
-					// We've been asked to validate this reflection, so we should validate that
-					// signatures all have comments
-					toProcess.push(...signatures);
+		++expectedCount;
+		if (hasComment) {
+			++actualCount;
+		} else {
+			notDocumented.push(ref.getFullName());
+		}
+		app.logger.verbose(
+			`[typedoc-plugin-coverage]: ${ref.getFullName()} ${ref.hasComment() ? "is" : "not"} considered documented.`,
+		);
+	}
 
-					if (ref.kindOf(ReflectionKind.SignatureContainer)) {
-						// Comments belong to each signature, and will not be included on this object.
-						continue;
-					}
-				}
-			}
+	const percentDocumented = expectedCount
+		? Math.floor((100 * actualCount) / expectedCount)
+		: 0;
 
-			const symbolId = event.project.getSymbolIdFromReflection(ref);
+	let label = app.options.getValue("coverageLabel");
+	let color = app.options.getValue("coverageColor");
+	if (!color) {
+		if (percentDocumented < 50) {
+			color = "#db654f";
+		} else if (percentDocumented < 90) {
+			color = "#dab226";
+		} else {
+			color = "#4fc921";
+		}
+	}
 
-			// #2644, signatures may be documented by their parent reflection.
-			const hasComment = ref.hasComment()
-				|| (ref.kindOf(ReflectionKind.SomeSignature) && ref.parent?.hasComment());
+	const width = app.options.getValue("coverageSvgWidth");
+	const badge = svg(color, label, percentDocumented, width);
 
-			// Diverging from validateDocumentation here.
-			if (!symbolId || !packagesRequiringDocumentation.includes(symbolId.packageName)) continue;
-			if (intentionallyNotDocumented.includes(ref.getFriendlyFullName())) continue;
+	const baseOutFile = app.options.getValue("coverageOutputPath")
+		|| join(app.options.getValue("html") || app.options.getValue("out"), "coverage.svg");
 
-			++expectedCount;
-			if (hasComment) {
-				++actualCount;
-			} else {
-				notDocumented.push(ref.getFullName());
-			}
-			app.logger.verbose(
-				`[typedoc-plugin-coverage]: ${ref.getFullName()} ${ref.hasComment() ? "is" : "not"} considered documented.`,
+	const { dir, name } = parse(baseOutFile);
+	mkdirSync(dir, { recursive: true });
+
+	const outFileSvg = join(dir, `${name}.svg`);
+	const outFileJson = join(dir, `${name}.json`);
+	const outputType = app.options.getValue("coverageOutputType");
+	switch (outputType) {
+		case CoverageOutputType.svg:
+			writeFileSync(outFileSvg, badge);
+			break;
+		case CoverageOutputType.json:
+			writeFileSync(
+				outFileJson,
+				JSON.stringify({
+					percent: percentDocumented,
+					expected: expectedCount,
+					actual: actualCount,
+					notDocumented,
+				}),
 			);
-		}
-
-		const percentDocumented = expectedCount
-			? Math.floor((100 * actualCount) / expectedCount)
-			: 0;
-
-		let label = app.options.getValue("coverageLabel");
-		let color = app.options.getValue("coverageColor");
-		if (!color) {
-			if (percentDocumented < 50) {
-				color = "#db654f";
-			} else if (percentDocumented < 90) {
-				color = "#dab226";
-			} else {
-				color = "#4fc921";
-			}
-		}
-
-		const width = app.options.getValue("coverageSvgWidth");
-		const badge = svg(color, label, percentDocumented, width);
-		const outFile = app.options.getValue("coverageOutputPath")
-			|| join(event.outputDirectory, "coverage.svg");
-		const { dir, name } = parse(outFile);
-		const outFileSvg = join(dir, `${name}.svg`);
-		const outFileJson = join(dir, `${name}.json`);
-		const outputType = app.options.getValue("coverageOutputType");
-		switch (outputType) {
-			case CoverageOutputType.svg:
-				writeFileSync(outFileSvg, badge);
-				break;
-			case CoverageOutputType.json:
-				writeFileSync(
-					outFileJson,
-					JSON.stringify({
-						percent: percentDocumented,
-						expected: expectedCount,
-						actual: actualCount,
-						notDocumented,
-					}),
-				);
-				break;
-			case CoverageOutputType.all:
-				writeFileSync(
-					outFileJson,
-					JSON.stringify({
-						percent: percentDocumented,
-						expected: expectedCount,
-						actual: actualCount,
-						notDocumented,
-					}),
-				);
-				writeFileSync(outFileSvg, badge);
-				break;
-			default:
-				// This should never happen, but just in case.
-				app.logger.warn(
-					`[typedoc-plugin-coverage]: Invalid coverage output type: ${outputType}`,
-				);
-		}
-	});
+			break;
+		case CoverageOutputType.all:
+			writeFileSync(
+				outFileJson,
+				JSON.stringify({
+					percent: percentDocumented,
+					expected: expectedCount,
+					actual: actualCount,
+					notDocumented,
+				}),
+			);
+			writeFileSync(outFileSvg, badge);
+			break;
+		default:
+			// This should never happen, but just in case.
+			app.logger.warn(
+				`[typedoc-plugin-coverage]: Invalid coverage output type: ${outputType}`,
+			);
+	}
 }

@@ -41,6 +41,7 @@ async function expectCoverage(
 	const snapshot = app.options.snapshot();
 
 	try {
+		app.options.setValue("coverageOutputPath", join(tmp, "coverage.svg"));
 		for (const [key, val] of Object.entries(options)) {
 			app.options.setValue(key, val);
 		}
