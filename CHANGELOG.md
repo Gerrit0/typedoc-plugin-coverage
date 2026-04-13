@@ -1,3 +1,8 @@
+### v4.0.3 (2026-04-12)
+
+- Declaration merging for options is now included in the published plugin, #15 (@Bertie960).
+- The `coverageOutputPath` option will now always use `.svg` and `.json` extensions instead of potentially writing JSON to a `.svg` file, #17 (@StoneCypher).
+
 ### v4.0.2 (2025-10-11)
 
 - No behavior changes, migrated release workflow to use trusted publishing.

@@ -23,7 +23,8 @@
 		"url": "https://github.com/Gerrit0/typedoc-plugin-coverage.git"
 	},
 	"files": [
-		"index.js"
+		"index.js",
+		"index.d.ts"
 	],
 	"keywords": [
 		"typedoc-plugin"
