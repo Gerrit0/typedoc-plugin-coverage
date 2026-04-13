@@ -4,7 +4,9 @@ docs
 yarn-error.log
 out.json
 
+*.d.ts
 *.js.map
 *.js
 *.d.ts
 !scripts/*.js
+tsconfig.vitest-temp.json

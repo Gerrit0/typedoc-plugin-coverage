@@ -1,11 +1,18 @@
 {
 	"compilerOptions": {
-		"target": "ES2020",
-		"module": "Node16",
+		"target": "es2020",
+		"module": "node16",
+		// required for vitest's type testing to not crash horribly
+		"moduleResolution": "node16",
+		// TS6 and onwards default `types` to including nothing by default
+		// (which causes annoying errors for contributors using TSGo).
+		"types": ["@types/node"],
 		"isolatedModules": true,
 		"forceConsistentCasingInFileNames": true,
 		"strict": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"declaration": true,
+		"stripInternal": true
 	},
 	"files": ["index.ts"],
 	"exclude": ["test/packages"]
