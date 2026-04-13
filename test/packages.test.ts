@@ -2,10 +2,9 @@ import { existsSync } from "fs";
 import { mkdtemp, readFile, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import { Application, TSConfigReader, TypeDocOptions } from "typedoc";
-import * as ts from "typescript";
+import { Application, TSConfigReader, TypeDocOptions, TypeScript as ts } from "typedoc";
 import { beforeAll, describe, expect, it } from "vitest";
-import { CoverageOutputType, load } from "../index.js";
+import { CoverageOutputType, load } from "../index.ts";
 
 let app: Application;
 let program: ts.Program;
@@ -23,7 +22,7 @@ beforeAll(async () => {
 
 	program = ts.createProgram(
 		app.options.getFileNames(),
-		app.options.getCompilerOptions(),
+		app.options.getCompilerOptions(app.logger),
 	);
 });
 
@@ -104,12 +103,11 @@ describe("Plugin", () => {
 		expect(sf).toBeDefined();
 
 		const tmp = await mkdtemp(join(tmpdir(), "typedoc-plugin-coverage-"));
-		const customPath = join(tmp, "my-badge.custom");
 
 		const snapshot = app.options.snapshot();
 		try {
 			app.options.setValue("coverageOutputType", CoverageOutputType.all);
-			app.options.setValue("coverageOutputPath", customPath);
+			app.options.setValue("coverageOutputPath", join(tmp, "my-badge.bad"));
 
 			const project = app.converter.convert([
 				{
@@ -120,8 +118,9 @@ describe("Plugin", () => {
 			]);
 			await app.renderer.render(project, tmp);
 
-			expect(existsSync(customPath)).toBe(true);
-			const svgContent = await readFile(customPath, "utf-8");
+			const svgPath = join(tmp, "my-badge.svg");
+			expect(existsSync(svgPath)).toBe(true);
+			const svgContent = await readFile(svgPath, "utf-8");
 			expect(svgContent).toContain("<svg");
 
 			const jsonPath = join(tmp, "my-badge.json");

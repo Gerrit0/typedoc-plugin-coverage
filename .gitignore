@@ -6,4 +6,5 @@ out.json
 
 *.js.map
 *.js
+*.d.ts
 !scripts/*.js
